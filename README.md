@@ -7,10 +7,6 @@
 [![Quality Score][ico-code-quality]][link-code-quality]
 [![Total Downloads][ico-downloads]][link-downloads]
 
-**Note:** Replace ```Simon Bennett``` ```:author_username``` ```smoothphp.com``` ```simon@smoothphp.com``` ```smoothphp``` ```querybus``` ```A simple bus for queries``` with their correct values in [README.md](README.md), [CHANGELOG.md](CHANGELOG.md), [CONTRIBUTING.md](CONTRIBUTING.md), [LICENSE.md](LICENSE.md) and [composer.json](composer.json) files, then delete this line.
-
-This is where your description should go. Try and limit it to a paragraph or two, and maybe throw in a mention of what
-PSRs you support to avoid any confusion with users and contributors.
 
 ## Install
 
@@ -23,8 +19,7 @@ $ composer require smoothphp/querybus
 ## Usage
 
 ``` php
-$skeleton = new League\Skeleton();
-echo $skeleton->echoPhrase('Hello, League!');
+
 ```
 
 ## Change log
