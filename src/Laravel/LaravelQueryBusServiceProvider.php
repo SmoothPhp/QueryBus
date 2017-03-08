@@ -13,7 +13,20 @@ use SmoothPhp\QueryBus\QueryTranslator;
  */
 final class LaravelQueryBusServiceProvider extends ServiceProvider
 {
-
+    public function boot()
+    {
+        $configPath = __DIR__ . '/../../config/querybus.php';
+        $this->publishes([$configPath => $this->getConfigPath()], 'config');
+    }
+    /**
+     * Get the config path
+     *
+     * @return string
+     */
+    protected function getConfigPath()
+    {
+        return config_path('querybus.php');
+    }
     /**
      * Register the service provider.
      *
@@ -21,7 +34,10 @@ final class LaravelQueryBusServiceProvider extends ServiceProvider
      */
     public function register()
     {
-        $this->app->bind(QueryTranslator::class, $this->app['config']->get('query_bus_translator'));
+        $configPath = __DIR__ . '/../../config/querybus.php';
+        $this->mergeConfigFrom($configPath, 'querybus');
+
+        $this->app->bind(QueryTranslator::class, $this->app['config']->get('querybus.query_bus_translator'));
 
         $middlewareChain = [];
 
