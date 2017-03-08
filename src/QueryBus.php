@@ -10,7 +10,7 @@ interface QueryBus
 {
     /**
      * @param $query
-     * @return \stdClass|array
+     * @return mixed
      */
     public function query($query);
 }
