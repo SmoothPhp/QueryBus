@@ -37,6 +37,12 @@ final class LaravelQueryBus implements QueryBus
      */
     public function query($query, $decorator = null)
     {
-        return $this->application->make($this->queryTranslator->toQueryHandler($query))->handle($query);
+        $handler = $this->application->make($this->queryTranslator->toQueryHandler($query));
+
+        if (is_callable($handler)) {
+            return $handler($query);
+        }
+
+        return $handler->handle($query);
     }
 }
