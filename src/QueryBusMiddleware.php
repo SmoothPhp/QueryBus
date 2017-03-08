@@ -3,15 +3,16 @@
 namespace SmoothPhp\QueryBus;
 
 /**
- * Interface QueryBus
+ * Interface QueryBusMiddleware
  * @package SmoothPhp\QueryBus
  * @author Simon Bennett <simon@bennett.im>
  */
-interface QueryBus
+interface QueryBusMiddleware
 {
     /**
-     * @param $query
+     * @param mixed $query
+     * @param callable $next
      * @return mixed
      */
-    public function query($query);
+    public function query($query, callable $next);
 }

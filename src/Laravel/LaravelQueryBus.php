@@ -1,9 +1,9 @@
-<?php
+<?php declare (strict_types=1);
+
 namespace SmoothPhp\QueryBus\Laravel;
 
 use SmoothPhp\QueryBus\QueryBus;
-use SmoothPhp\QueryBus\QueryTranslator;
-use Illuminate\Contracts\Foundation\Application;
+use SmoothPhp\QueryBus\QueryBusMiddleware;
 
 /**
  * Class LaravelQueryBus
@@ -11,38 +11,43 @@ use Illuminate\Contracts\Foundation\Application;
  */
 final class LaravelQueryBus implements QueryBus
 {
-    /**
-     * @var Application
-     */
-    private $application;
-    /**
-     * @var QueryTranslator
-     */
-    private $queryTranslator;
+    /** @var QueryBusMiddleware[] */
+    private $middlewareChain;
 
     /**
-     * @param Application $application
-     * @param QueryTranslator $queryTranslator
+     * LaravelQueryBus constructor.
+     * @param QueryBusMiddleware[] $queryBusMiddleware
      */
-    public function __construct(Application $application, QueryTranslator $queryTranslator)
+    public function __construct(QueryBusMiddleware ...$queryBusMiddleware)
     {
-        $this->application = $application;
-        $this->queryTranslator = $queryTranslator;
+        $this->middlewareChain = $this->generateMiddlewareCallChain($queryBusMiddleware);
     }
 
     /**
      * @param $query
-     * @param null $decorator
-     * @return \stdClass
+     * @return mixed
      */
-    public function query($query, $decorator = null)
+    public function query($query)
     {
-        $handler = $this->application->make($this->queryTranslator->toQueryHandler($query));
+        return ($this->middlewareChain)($query);
+    }
 
-        if (is_callable($handler)) {
-            return $handler($query);
+    /**
+     * @param $middlewareList
+     * @return callable
+     */
+    private function generateMiddlewareCallChain($middlewareList)
+    {
+        $lastCallable = function () {
+            // the final callable does not run
+        };
+
+        while ($middleware = array_pop($middlewareList)) {
+            $lastCallable = function ($command) use ($middleware, $lastCallable) {
+                return $middleware->query($command, $lastCallable);
+            };
         }
 
-        return $handler->handle($query);
+        return $lastCallable;
     }
 }
