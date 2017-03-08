@@ -1,23 +1,25 @@
-<?php declare(strict_types = 1);
+<?php declare (strict_types=1);
 
 namespace SmoothPhp\QueryBus\Test\QueryBus;
 
 use Illuminate\Contracts\Foundation\Application;
 use SmoothPhp\QueryBus\Laravel\LaravelQueryBus;
+use SmoothPhp\QueryBus\Laravel\LaravelQueryHandlerMiddleware;
+use SmoothPhp\QueryBus\QueryBusMiddleware;
 use SmoothPhp\QueryBus\SimpleQueryTranslator;
 use SmoothPhp\QueryBus\Test\TestCase;
 
 /**
  * Class QueryBusTest
- * @package SmoothPhp\QueryBus\Test
- * @author jrdn hannah <jordan@hotsnapper.com>
+ * @package SmoothPhp\QueryBus\Test\QueryBus
+ * @author Simon Bennett <simon@bennett.im>
  */
 final class QueryBusTest extends TestCase
 {
     /**
      * @test
      */
-    public function test_handling_queries()
+    public function laravel_query_bus_test()
     {
         if (interface_exists(Application::class)) {
             $container = $this->getMock(Application::class);
@@ -29,54 +31,50 @@ final class QueryBusTest extends TestCase
 
             $translator = new SimpleQueryTranslator;
 
-            $bus = new LaravelQueryBus($container, $translator);
+            $handlerMiddleware = new LaravelQueryHandlerMiddleware($container, $translator);
 
-            $result = $bus->query(new Query);
+            $queryBus = new LaravelQueryBus($handlerMiddleware);
+
+            $result = $queryBus->query(new Query);
 
             $this->assertTrue($result['result']);
         }
     }
-
     /**
      * @test
      */
-    public function test_handling_callable_queries()
+    public function laravel_query_bus_test_middleware()
     {
         if (interface_exists(Application::class)) {
             $container = $this->getMock(Application::class);
             $container
                 ->expects($this->once())
                 ->method('make')
-                ->with(CallableQueryHandler::class)
-                ->willReturn(new CallableQueryHandler);
+                ->with(QueryHandler::class)
+                ->willReturn(new QueryHandler);
 
             $translator = new SimpleQueryTranslator;
 
-            $bus = new LaravelQueryBus($container, $translator);
+            $handlerMiddleware = new LaravelQueryHandlerMiddleware($container, $translator);
 
-            $result = $bus->query(new CallableQuery);
+            $queryBus = new LaravelQueryBus(new class implements QueryBusMiddleware {
+
+                /**
+                 * @param mixed $query
+                 * @param callable $next
+                 * @return mixed
+                 */
+                public function query($query, callable $next)
+                {
+                    return array_merge($next($query),['middleware' => true]);
+                }
+            },$handlerMiddleware);
+
+            $result = $queryBus->query(new Query);
 
             $this->assertTrue($result['result']);
+            $this->assertTrue($result['middleware']);
+
         }
-    }
-}
-
-final class Query {
-
-}
-
-final class CallableQuery {
-
-}
-
-final class QueryHandler {
-    public function handle(Query $query) {
-        return ['result' => true];
-    }
-}
-
-final class CallableQueryHandler {
-    public function __invoke(CallableQuery $query) {
-        return ['result' => true];
     }
 }
