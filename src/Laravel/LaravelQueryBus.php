@@ -2,6 +2,7 @@
 
 namespace SmoothPhp\QueryBus\Laravel;
 
+use Dizinga\Infrastructure\QueryBusCache\QueryBusCacheMiddleware;
 use SmoothPhp\QueryBus\QueryBus;
 use SmoothPhp\QueryBus\QueryBusMiddleware;
 
@@ -12,7 +13,7 @@ use SmoothPhp\QueryBus\QueryBusMiddleware;
 final class LaravelQueryBus implements QueryBus
 {
     /** @var QueryBusMiddleware[] */
-    private $middlewareChain;
+    private $queryBusMiddleware;
 
     /**
      * LaravelQueryBus constructor.
@@ -20,7 +21,15 @@ final class LaravelQueryBus implements QueryBus
      */
     public function __construct(QueryBusMiddleware ...$queryBusMiddleware)
     {
-        $this->middlewareChain = $this->generateMiddlewareCallChain($queryBusMiddleware);
+        $this->queryBusMiddleware = $queryBusMiddleware;
+    }
+
+    /**
+     * @param QueryBusMiddleware $middleware
+     */
+    public function addToMiddlewareChain(QueryBusMiddleware $middleware)
+    {
+        array_unshift($this->queryBusMiddleware, $middleware);
     }
 
     /**
@@ -29,20 +38,20 @@ final class LaravelQueryBus implements QueryBus
      */
     public function query($query)
     {
-        return ($this->middlewareChain)($query);
+        return $this->generateMiddlewareCallChain()($query);
     }
 
     /**
-     * @param $middlewareList
      * @return callable
      */
-    private function generateMiddlewareCallChain($middlewareList)
+    private function generateMiddlewareCallChain()
     {
+        $middlewareChain = $this->queryBusMiddleware;
         $lastCallable = function () {
             // the final callable does not run
         };
 
-        while ($middleware = array_pop($middlewareList)) {
+        while ($middleware = array_pop($middlewareChain)) {
             $lastCallable = function ($command) use ($middleware, $lastCallable) {
                 return $middleware->query($command, $lastCallable);
             };

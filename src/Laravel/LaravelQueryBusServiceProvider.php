@@ -17,6 +17,10 @@ final class LaravelQueryBusServiceProvider extends ServiceProvider
     {
         $configPath = __DIR__ . '/../../config/querybus.php';
         $this->publishes([$configPath => $this->getConfigPath()], 'config');
+
+        foreach ($this->app['config']->get('querybus.query_bus_middleware') as $middleware) {
+            $this->app->make(QueryBus::class)->addToMiddlewareChain($this->app->make($middleware));
+        }
     }
     /**
      * Get the config path
@@ -41,10 +45,7 @@ final class LaravelQueryBusServiceProvider extends ServiceProvider
 
         $middlewareChain = [];
 
-        foreach ($this->app['config']->get('querybus.query_bus_middleware') as $middleware) {
-            $this->app->singleton($middleware);
-            $middlewareChain[] = $this->app->make($middleware);
-        }
+
         $middlewareChain[] = new LaravelQueryHandlerMiddleware(
             $this->app, $this->app->make(QueryTranslator::class)
         );
